@@ -316,32 +316,32 @@ int main(int argc, char** argv) {
     std::cout<<"\n==================================================================================================\n";
     
     
-    // std::cout << "HOST -> DEVICE [Kernel-2]" << std::endl;
-    // htod_opti = clock();
-    // OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_input_optimized}, 0 /* 0 means from host*/)); 
-    // q.finish();
-    // htod_opti = clock() - htod_opti;
+    std::cout << "HOST -> DEVICE [Kernel-2]" << std::endl;
+    htod_opti = clock();
+    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_input_optimized}, 0 /* 0 means from host*/)); 
+    q.finish();
+    htod_opti = clock() - htod_opti;
   
 
-    // std::cout << "STARTING KERNEL - 2(S)" << std::endl;
-    // comp_opti = clock();
-    // OCL_CHECK(err, err = q.enqueueTask(krnl2));
-    // q.finish();
-    // comp_opti = clock() - comp_opti;
-    // std::cout << "KERNEL - 2(S) FINISHED" << std::endl;
+    std::cout << "STARTING KERNEL - 2(S)" << std::endl;
+    comp_opti = clock();
+    OCL_CHECK(err, err = q.enqueueTask(krnl2));
+    q.finish();
+    comp_opti = clock() - comp_opti;
+    std::cout << "KERNEL - 2(S) FINISHED" << std::endl;
 
     
-    // std::cout << "HOST <- DEVICE [Kernel-2]" << std::endl;
-    // dtoh_opti = clock();
-    // OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output_optimized}, CL_MIGRATE_MEM_OBJECT_HOST));
-    // q.finish();
-    // dtoh_opti = clock() - dtoh_opti;
+    std::cout << "HOST <- DEVICE [Kernel-2]" << std::endl;
+    dtoh_opti = clock();
+    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output_optimized}, CL_MIGRATE_MEM_OBJECT_HOST));
+    q.finish();
+    dtoh_opti = clock() - dtoh_opti;
 
     /*====================================================VERIFICATION & TIMING===============================================================*/
 
     //printf("Host -> Device : %lf ms\n", 1000.0 * htod/CLOCKS_PER_SEC);
     printf("Computation without optimization : %lf ms\n",  1000.0 * comp/CLOCKS_PER_SEC);
-    //printf("Computation with optimization : %lf ms\n",  1000.0 * comp_opti/CLOCKS_PER_SEC);
+    printf("Computation with optimization : %lf ms\n",  1000.0 * comp_opti/CLOCKS_PER_SEC);
     //printf("Device -> Host : %lf ms\n", 1000.0 * dtoh/CLOCKS_PER_SEC);
     //printf("==========================To check:-================================\n");
     
@@ -354,7 +354,7 @@ int main(int argc, char** argv) {
 
     std::cout << "HW:" << output_hw[0] << " SW:" << output_sw[0] << std::endl;
     if (output_hw[0] != output_sw[0]) match = false;     //std::cout << output_hw_opti[0] << std::endl;
-
+    
     std::cout << std::endl << "TEST " << (match ? "PASSED" : "FAILED") << std::endl;
 
     free(output_sw);
