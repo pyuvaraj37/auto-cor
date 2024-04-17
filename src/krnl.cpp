@@ -57,37 +57,8 @@ void co_autocorrs(double y[DATA_SIZE], double z[DATA_SIZE])
     cmplx_type input[DATA_SIZE]; //F
     cmplx_type output[DATA_SIZE];
     
-    for (int i = 0; i < DATA_SIZE; i++) {
-        
-        input[i].real = y[i] - m;
-        input[i].imag = 0.0; 
-    }
-    pease_fft(input, output);
-    dot_multiply(output, input);
-    pease_fft(input, output);
-
-    cmplx_type divisor = output[0];
-    
-    for (int i = 0; i < DATA_SIZE; i++) {
-        
-        input[i] = cmpxdiv(divisor, output[i]); // F[i] / divisor;
-    }
-
-
-    for (int i = 0; i < DATA_SIZE; i++) {
-        
-        z[i] = input[i].real;
-    }
-
-}
-void co_autocorrs_optimized(double y[DATA_SIZE], double z[DATA_SIZE])
-{   
-    std::cout << "AUTO COR" << std::endl; 
-    double m, nFFT;
-    m = mean(y);
-    //NFFT is not defined
-    cmplx_type input[DATA_SIZE]; //F
-    cmplx_type output[DATA_SIZE];
+    cmplx_type input[2 * DATA_SIZE];
+    cmplx_type output[2 * DATA_SIZE];
     
    
     for (int i = 0; i < DATA_SIZE; i++) {
@@ -95,19 +66,23 @@ void co_autocorrs_optimized(double y[DATA_SIZE], double z[DATA_SIZE])
         input[i].real = y[i] - m;
         input[i].imag = 0.0; 
     }
-    
+    for (int i = DATA_SIZE; i < 2 * DATA_SIZE; i++) {
+        input[i].real = 0.0;
+        input[i].imag = 0.0; 
+    }
+
     pease_fft(input, output);
     dot_multiply_optimized(output, input);
     pease_fft(input, output);
 
     cmplx_type divisor = output[0];
     
-    for (int i = 0; i < DATA_SIZE; i++) {
+    for (int i = 0; i < 2 * DATA_SIZE; i++) {
         input[i] = cmpxdiv(divisor, output[i]); // F[i] / divisor;
     }
 
 
-    for (int i = 0; i < DATA_SIZE; i++) {
+    for (int i = 0; i < 2 * DATA_SIZE; i++) {
   
         z[i] = input[i].real;
     }
@@ -118,15 +93,8 @@ void co_autocorrs_optimized(double y[DATA_SIZE], double z[DATA_SIZE])
 int CO_FirstMin_ac(double window[DATA_SIZE],bool optimized)
 {
     // Removed NaN check
-    double autocorrs[DATA_SIZE];
-    if (!optimized)
-    {
-        co_autocorrs(window, autocorrs);
-    }
-    else
-    {
-        co_autocorrs_optimized(window, autocorrs);
-    }
+    double autocorrs[2 * DATA_SIZE];
+    co_autocorrs(window, autocorrs);
     int minInd = DATA_SIZE;
     for(int i = 1; i < DATA_SIZE-1; i++)
     {
@@ -143,19 +111,7 @@ int CO_FirstMin_ac(double window[DATA_SIZE],bool optimized)
 extern "C" void krnl(data_t* input, data_t* output,bool optimized) {
     int arr_len = sizeof(input)/sizeof(input[0]);
     std::cout <<"The length of the array is"<<arr_len;
-    // std::cout <<"==================================================================================";
-    // for (int i = 0; i < DATA_SIZE; i++) 
-    // {
-    // std::cout << input[i] << "\n";
-    // }
-    // std::cout <<"==================================================================================";
-    
-    // std::cout <<"====================================second round==============================================";
-    // for (int i = 0; i < DATA_SIZE; i++) 
-    // {
-    // std::cout << input[i] << "\n";
-    // }
-    // std::cout <<"====================================second round==============================================";
+   
     #pragma HLS INTERFACE mode=m_axi port=input
     #pragma HLS INTERFACE mode=m_axi port=output
 
@@ -165,7 +121,7 @@ extern "C" void krnl(data_t* input, data_t* output,bool optimized) {
 
     /* Reading from DDR*/
     for (int i = 0; i < DATA_SIZE; i++) {
-        window[i] = input[w + i];
+        window[i] = input[i];
     }
 
    
@@ -174,7 +130,5 @@ extern "C" void krnl(data_t* input, data_t* output,bool optimized) {
     result = CO_FirstMin_ac(window,optimized);
     //std::cout <<  << "\n"; result
     /* Writing to DDR */
-    output[w] = result;
-
-    w++; 
+    output[0] = result;
 }
