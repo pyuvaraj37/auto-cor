@@ -21,6 +21,14 @@ cmplx_type cmpxdiv(cmplx_type a, cmplx_type b) {
     result.imag = b.imag/a_conj_divisor.real; 
     return result;
 }
+
+cmplx_type cmpxdiv_optimized(cmplx_type a, cmplx_type b) {
+    cmplx_type a_conj, a_conj_divisor, result;
+    CMPXDOTMUL(a_conj_divisor,a);
+    result.real = b.real/a_conj_divisor.real; 
+    result.imag = b.imag/a_conj_divisor.real; 
+    return result;
+}
 void dot_multiply(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 {
     std::cout << "I am in dot-multiply";
@@ -35,10 +43,10 @@ void dot_multiply_optimized(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 {
     std::cout << "I am in dot-multiply optimized";
     for (int i = 0; i < DATA_SIZE; i++) {
-        #pragma HLS unroll //factor=2 skip_exit_check off=true
-        cmplx_type a_conj; 
-        CMPXCONJ(a_conj, a[i]);
-        CMPXMUL(b[i], a[i], a_conj);                   
+        #pragma HLS pipeline
+       // #pragma HLS unroll pipeline //skip_exit_check off=true
+        CMPXDOTMUL(b[i],a[i]);
+                           
         
     }  
 
@@ -75,12 +83,12 @@ void co_autocorrs_optimized(double y[DATA_SIZE], double z[DATA_SIZE])
     cmplx_type divisor = output[0];
     
     for (int i = 0; i < 2 * DATA_SIZE; i++) {
-        input[i] = cmpxdiv(divisor, output[i]); // F[i] / divisor;
+        #pragma HLS unroll
+        input[i] = cmpxdiv_optimized(divisor, output[i]); // F[i] / divisor;
     }
 
 
-    for (int i = 0; i < 2 * DATA_SIZE; i++) {
-  
+    for (int i = 0; i < 2 * DATA_SIZE; i++) {  
         z[i] = input[i].real;
     }
 

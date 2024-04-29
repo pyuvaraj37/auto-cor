@@ -212,6 +212,7 @@ int main(int argc, char** argv) {
     }
    
     clock_t htod, dtoh, comp, comp_opti,dtoh_opti,htod_opti;
+    double durationUs_nonopti,durationUs_opti = 0.0;
 
 
     /*====================================================CL===============================================================*/
@@ -302,9 +303,12 @@ int main(int argc, char** argv) {
       /*STARTING KERNEL(S)*/
     std::cout << "STARTING KERNEL - 1(S)" << std::endl;
     comp = clock();
+    auto start_non = std::chrono::high_resolution_clock::now();
     OCL_CHECK(err, err = q.enqueueTask(krnl1));
     q.finish();
     comp = clock() - comp;
+    auto end_non = std::chrono::high_resolution_clock::now();
+    durationUs_nonopti = (std::chrono::duration_cast<std::chrono::nanoseconds>(end_non-start_non).count() / 1000.0);
     std::cout << "KERNEL - 1(S) FINISHED" << std::endl;
 
      /*DEVICE -> HOST DATA TRANSFER*/
@@ -325,9 +329,12 @@ int main(int argc, char** argv) {
 
     std::cout << "STARTING KERNEL - 2(S)" << std::endl;
     comp_opti = clock();
+    auto start_opti = std::chrono::high_resolution_clock::now();
     OCL_CHECK(err, err = q.enqueueTask(krnl2));
     q.finish();
     comp_opti = clock() - comp_opti;
+    auto end_opti = std::chrono::high_resolution_clock::now();
+    durationUs_opti = (std::chrono::duration_cast<std::chrono::nanoseconds>(end_opti-start_opti).count() / 1000.0);
     std::cout << "KERNEL - 2(S) FINISHED" << std::endl;
 
     
@@ -340,9 +347,11 @@ int main(int argc, char** argv) {
     /*====================================================VERIFICATION & TIMING===============================================================*/
 
     //printf("Host -> Device : %lf ms\n", 1000.0 * htod/CLOCKS_PER_SEC);
-    printf("Computation without optimization : %lf ms\n",  1000.0 * comp/CLOCKS_PER_SEC);
-    printf("Computation with optimization : %lf ms\n",  1000.0 * comp_opti/CLOCKS_PER_SEC);
+    // printf("Computation without optimization : %lf ms\n",  1000.0 * comp/CLOCKS_PER_SEC);
+    // printf("Computation with optimization : %lf ms\n",  1000.0 * comp_opti/CLOCKS_PER_SEC);
     //printf("Device -> Host : %lf ms\n", 1000.0 * dtoh/CLOCKS_PER_SEC);
+    printf("Computation without optimization : %lf Us\n",  durationUs_nonopti);
+    printf("Computation with optimization : %lf Us\n",  durationUs_opti);
     //printf("==========================To check:-================================\n");
     
 
