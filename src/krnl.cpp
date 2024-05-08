@@ -32,7 +32,7 @@ cmplx_type cmpxdiv_optimized(cmplx_type a, cmplx_type b) {
 void dot_multiply(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 {
     std::cout << "I am in dot-multiply";
-    for (int i = 0; i < DATA_SIZE; i++) {
+    loop_check2 :for (int i = 0; i < DATA_SIZE; i++) {
         cmplx_type a_conj;  //
         CMPXCONJ(a_conj, a[i]);
         CMPXMUL(b[i], a[i], a_conj);
@@ -41,9 +41,11 @@ void dot_multiply(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 }
 void dot_multiply_optimized(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 {
+    #pragma HLS array_partition variable=a complete
+    #pragma HLS array_partition variable=b complete
     std::cout << "I am in dot-multiply optimized";
-    for (int i = 0; i < DATA_SIZE; i++) {
-        #pragma HLS pipeline
+    loop_check :for (int i = 0; i < DATA_SIZE; i++) {
+        #pragma HLS unroll 
        // #pragma HLS unroll pipeline //skip_exit_check off=true
         CMPXDOTMUL(b[i],a[i]);
                            
@@ -55,12 +57,11 @@ void dot_multiply_optimized(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 
 
 void co_autocorrs_optimized(double y[DATA_SIZE], double z[DATA_SIZE])
-{   
+{  
     std::cout << "AUTO COR" << std::endl; 
     double m, nFFT;
     m = mean(y);
     //NFFT is not defined
-    
     std::cout << "I am in auto corrs optimized";
     cmplx_type input[2 * DATA_SIZE];
     cmplx_type output[2 * DATA_SIZE];
