@@ -238,7 +238,7 @@ int main(int argc, char** argv) {
             std::cout << "Device[" << i << "]: program successful!\n";
             std::cout << "Setting CU(s) up..." << std::endl;
             OCL_CHECK(err, krnl1 = cl::Kernel(program, "krnl", &err));
-            OCL_CHECK(err, krnl2 = cl::Kernel(program, "krnl", &err));
+            OCL_CHECK(err, krnl2 = cl::Kernel(program, "krnl_optimized", &err));
             valid_device = true;
             break; // we break because we found a valid device
         }
@@ -286,11 +286,11 @@ int main(int argc, char** argv) {
     /* SETTING INPUT PARAMETERS */
     OCL_CHECK(err, err = krnl1.setArg(0, buffer_input));
     OCL_CHECK(err, err = krnl1.setArg(1, buffer_output));
-    OCL_CHECK(err, err = krnl1.setArg(2, false));
+    // OCL_CHECK(err, err = krnl1.setArg(2, false));
 
     OCL_CHECK(err, err = krnl2.setArg(0, buffer_input_optimized));
     OCL_CHECK(err, err = krnl2.setArg(1, buffer_output_optimized));
-    OCL_CHECK(err, err = krnl2.setArg(2, true));
+    // OCL_CHECK(err, err = krnl2.setArg(2, true));
 
     /*====================================================KERNEL===============================================================*/
     /* HOST -> DEVICE DATA TRANSFER*/
