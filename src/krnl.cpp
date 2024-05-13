@@ -3,7 +3,6 @@
 #include "header.h"
 #include <iostream>
 
-
 double mean(double a[])
 {
     double m = 0.0;
@@ -25,14 +24,34 @@ cmplx_type cmpxdiv(cmplx_type a, cmplx_type b) {
 void dot_multiply(cmplx_type a[DATA_SIZE], cmplx_type b[DATA_SIZE])
 {
     std::cout << "I am in dot-multiply";
-    loop_check2 :for (int i = 0; i < DATA_SIZE; i++) {
-        cmplx_type a_conj;  //
+    
+    loop_check2 :for (int i = 0; i < 2*DATA_SIZE; i++) {
+        cmplx_type a_conj;  
         CMPXCONJ(a_conj, a[i]);
         CMPXMUL(b[i], a[i], a_conj);
     }
     
 }
 
+void inverse_fft(cmplx_type input[DATA_SIZE], cmplx_type output[DATA_SIZE]) 
+{
+    cmplx_type conju[2*DATA_SIZE];
+    cmplx_type second_conj[2*DATA_SIZE];
+    loop_inverse_conj:for(int i=0;i<2*DATA_SIZE;i++) 
+    {
+        CMPXCONJ(conju[i],input[i]);
+    }
+    pease_fft(conju,second_conj);
+    
+    loop_inverse_conj2:for(int i=0;i<2*DATA_SIZE;i++) 
+    {
+        CMPXCONJ(output[i],second_conj[i]);
+        output[i].real = output[i].real/(2*DATA_SIZE);
+        output[i].imag = output[i].imag/(2*DATA_SIZE);
+
+    }
+
+} 
 
 void co_autocorrs(double y[DATA_SIZE], double z[DATA_SIZE])
 {   
@@ -55,7 +74,13 @@ void co_autocorrs(double y[DATA_SIZE], double z[DATA_SIZE])
     }
     pease_fft(input, output);
     dot_multiply(output, input);
-    pease_fft(input, output);
+    inverse_fft(input, output);
+    
+    std:: cout <<"The final kernel values \n";
+    for (int i = 0; i < 2*DATA_SIZE; i++) {
+       std::cout << "(" << output[i].real << "," << output[i].imag << ")" << "\n";
+    }
+    
     cmplx_type divisor = output[0];    
     loop_div:for (int i = 0; i < 2 * DATA_SIZE; i++) {
         input[i] = cmpxdiv(divisor, output[i]); // F[i] / divisor;

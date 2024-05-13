@@ -13,17 +13,6 @@
 #include <complex>
 typedef std::complex< double > cplx;
 
-// #else
-
-// #include <complex.h>
-
-// #if defined(__GNUC__) || defined(__GNUG__)
-// typedef double complex cplx;
-// #elif defined(_MSC_VER)
-// typedef _Dcomplex cplx;
-// #endif
-// #endif
-
 #define pow2(x) (1 << x)
 
 double mean(const double a[], const int size)
@@ -37,24 +26,14 @@ double mean(const double a[], const int size)
 }
 
 cplx _Cmulcc(cplx x, cplx y) {
-    /*double a = x._Val[0];
-    double b = x._Val[1];
-
-    double c = y._Val[0];
-    double d = y._Val[1];
-
-    cplx result = { (a * c - b * d), (a * d + c * b) };
-        */
     return x*y;
 }
 
 cplx _Cminuscc(cplx x, cplx y) {
-    //cplx result = { x._Val[0] - y._Val[0], x._Val[1] - y._Val[1] };
     return x - y;
 }
 
 cplx _Caddcc(cplx x, cplx y) {
-    // cplx result = { x._Val[0] + y._Val[0], x._Val[1] + y._Val[1] };
     return x + y;
 }
 
@@ -72,7 +51,6 @@ cplx _Cdivcc(cplx x, cplx y) {
     
     return result;
         
-    // return x / y;
 }
 
 void twiddles(cplx a[], int size)
@@ -110,7 +88,32 @@ void fft(cplx a[], int size, cplx tw[])
     _fft(a, out, size, 1, tw);
     free(out);
 }
-
+void conjugate(cplx a[], int size)
+{
+     for (int i = 0; i < size; i++) {
+        a[i] = std::conj(a[i]);
+    }
+}
+void inverse_fft(cplx a[] , int size , cplx tw[])
+{  
+   conjugate(a,size);
+   cplx * out = (cplx*) malloc(size * sizeof(cplx));
+   memcpy(out, a, size * sizeof(cplx));
+   _fft(a, out, size, 1, tw);
+   conjugate(a,size);
+   float divisor = static_cast<double>(size);
+    for (int i = 0; i < size; i++) {
+        double val = a[i].real();
+        double imag = a[i].imag();
+        a[i].real(val/divisor);
+        a[i].imag(imag/divisor);        
+    }
+    std:: cout <<"The final host values \n";
+    for (int i = 0; i < size; i++) {
+       std::cout << a[i] << "\n";
+    }
+   free(out);
+}
 int nextpow2(int n)
 {
     n--;
@@ -156,7 +159,12 @@ double * co_autocorrs(const double y[], const int size)
     twiddles(tw, nFFT);
     fft(F, nFFT, tw);
     dot_multiply(F, F, nFFT);
-    fft(F, nFFT, tw);
+    // fft(F, nFFT, tw)
+    inverse_fft(F, nFFT, tw);
+    // std:: cout <<"The final F values from the host\n";
+    // for (int i = 0; i < nFFT; i++) {
+    //    std::cout << F[i] << "\n";
+    // }
     cplx divisor = F[0];
     for (int i = 0; i < nFFT; i++) {
         F[i] = _Cdivcc(F[i], divisor); // F[i] / divisor;
@@ -174,16 +182,7 @@ double * co_autocorrs(const double y[], const int size)
 
 int CO_FirstMin_ac(const double y[], const int size)
 {
-    
-    // NaN check
-    // for(int i = 0; i < size; i++)
-    // {
-    //     if(isnan(y[i]))
-    //     {
-    //         return 0;
-    //     }
-    // }
-    
+   
     double * autocorrs = co_autocorrs(y, size);
     
     int minInd = size;
@@ -238,7 +237,7 @@ int main(int argc, char** argv) {
             std::cout << "Device[" << i << "]: program successful!\n";
             std::cout << "Setting CU(s) up..." << std::endl;
             OCL_CHECK(err, krnl1 = cl::Kernel(program, "krnl", &err));
-            OCL_CHECK(err, krnl2 = cl::Kernel(program, "krnl_optimized", &err));
+            //OCL_CHECK(err, krnl2 = cl::Kernel(program, "krnl_optimized", &err));
             valid_device = true;
             break; // we break because we found a valid device
         }
@@ -288,8 +287,8 @@ int main(int argc, char** argv) {
     OCL_CHECK(err, err = krnl1.setArg(1, buffer_output));
     // OCL_CHECK(err, err = krnl1.setArg(2, false));
 
-    OCL_CHECK(err, err = krnl2.setArg(0, buffer_input_optimized));
-    OCL_CHECK(err, err = krnl2.setArg(1, buffer_output_optimized));
+    //OCL_CHECK(err, err = krnl2.setArg(0, buffer_input_optimized));
+    //OCL_CHECK(err, err = krnl2.setArg(1, buffer_output_optimized));
     // OCL_CHECK(err, err = krnl2.setArg(2, true));
 
     /*====================================================KERNEL===============================================================*/
@@ -320,29 +319,29 @@ int main(int argc, char** argv) {
     std::cout<<"\n==================================================================================================\n";
     
     
-    std::cout << "HOST -> DEVICE [Kernel-2]" << std::endl;
-    htod_opti = clock();
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_input_optimized}, 0 /* 0 means from host*/)); 
-    q.finish();
-    htod_opti = clock() - htod_opti;
+    // std::cout << "HOST -> DEVICE [Kernel-2]" << std::endl;
+    // htod_opti = clock();
+    // OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_input_optimized}, 0 /* 0 means from host*/)); 
+    // q.finish();
+    // htod_opti = clock() - htod_opti;
   
 
-    std::cout << "STARTING KERNEL - 2(S)" << std::endl;
-    comp_opti = clock();
-    auto start_opti = std::chrono::high_resolution_clock::now();
-    OCL_CHECK(err, err = q.enqueueTask(krnl2));
-    q.finish();
-    comp_opti = clock() - comp_opti;
-    auto end_opti = std::chrono::high_resolution_clock::now();
-    durationUs_opti = (std::chrono::duration_cast<std::chrono::nanoseconds>(end_opti-start_opti).count() / 1000.0);
-    std::cout << "KERNEL - 2(S) FINISHED" << std::endl;
+    // std::cout << "STARTING KERNEL - 2(S)" << std::endl;
+    // comp_opti = clock();
+    // auto start_opti = std::chrono::high_resolution_clock::now();
+    // OCL_CHECK(err, err = q.enqueueTask(krnl2));
+    // q.finish();
+    // comp_opti = clock() - comp_opti;
+    // auto end_opti = std::chrono::high_resolution_clock::now();
+    // durationUs_opti = (std::chrono::duration_cast<std::chrono::nanoseconds>(end_opti-start_opti).count() / 1000.0);
+    // std::cout << "KERNEL - 2(S) FINISHED" << std::endl;
 
     
-    std::cout << "HOST <- DEVICE [Kernel-2]" << std::endl;
-    dtoh_opti = clock();
-    OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output_optimized}, CL_MIGRATE_MEM_OBJECT_HOST));
-    q.finish();
-    dtoh_opti = clock() - dtoh_opti;
+    // std::cout << "HOST <- DEVICE [Kernel-2]" << std::endl;
+    // dtoh_opti = clock();
+    // OCL_CHECK(err, err = q.enqueueMigrateMemObjects({buffer_output_optimized}, CL_MIGRATE_MEM_OBJECT_HOST));
+    // q.finish();
+    // dtoh_opti = clock() - dtoh_opti;
 
     /*====================================================VERIFICATION & TIMING===============================================================*/
 
@@ -351,7 +350,7 @@ int main(int argc, char** argv) {
     // printf("Computation with optimization : %lf ms\n",  1000.0 * comp_opti/CLOCKS_PER_SEC);
     //printf("Device -> Host : %lf ms\n", 1000.0 * dtoh/CLOCKS_PER_SEC);
     printf("Computation without optimization : %lf Us\n",  durationUs_nonopti);
-    printf("Computation with optimization : %lf Us\n",  durationUs_opti);
+   // printf("Computation with optimization : %lf Us\n",  durationUs_opti);
     //printf("==========================To check:-================================\n");
     
 
